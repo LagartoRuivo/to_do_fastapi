@@ -1,5 +1,7 @@
 from http import HTTPStatus
 
+from to_do_list.schemas.user import responseUserSchema
+
 
 def test_read_root_deve_retornar_ok_e_ola_mundo(client):
     # Arrange (Organização do teste)
@@ -46,24 +48,63 @@ def test_create_user(client):
     }
 
 
-def test_read_users(client):
+def test_create_user_username_already_exist(client, user):
+    response = client.post(
+        '/users/',
+        json={
+            'username': 'Teste',
+            'password': 'tsttst',
+            'email': 'email_cod@teste.com',
+        },
+    )  # Act (Ação do teste)
+
+    assert response.status_code == HTTPStatus.BAD_REQUEST  # Assert (Afirmação)
+    assert response.json() == {
+        'detail': {
+            'message': 'Existe um usuário com esse name e/ou email!',
+            'id': 1,
+        }
+    }
+
+
+def test_create_user_email_already_exist(client, user):
+    response = client.post(
+        '/users/',
+        json={
+            'username': 'Teste_email',
+            'password': 'tsttst',
+            'email': 'teste@test.com',
+        },
+    )  # Act (Ação do teste)
+
+    assert response.status_code == HTTPStatus.BAD_REQUEST  # Assert (Afirmação)
+    assert response.json() == {
+        'detail': {
+            'message': 'Existe um usuário com esse name e/ou email!',
+            'id': 1,
+        }
+    }
+
+
+def test_read_users_with_no_users(client):
     response = client.get('/users/')  # Act (Ação do teste)
 
     assert response.status_code == HTTPStatus.OK  # Assert (Afirmação)
-    assert response.json() == {
-        'users': [
-            {
-                'username': 'teste_cod',
-                'email': 'email_cod@teste.com',
-                'id': 1,
-            }
-        ]
-    }
+    assert response.json() == {'users': []}
 
 
-def test_update_user(client):
+def test_read_users_with_users(client, user):
+    user_schema = responseUserSchema.model_validate(user).model_dump()
+
+    response = client.get('/users/')  # Act (Ação do teste)
+    assert response.status_code == HTTPStatus.OK  # Assert (Afirmação)
+    assert response.json() == {'users': [user_schema]}
+
+
+def test_update_user(client, user, token):
     response = client.put(
-        '/users/1',
+        f'/users/{user.id}',
+        headers={'Authorization': f'Bearer {token}'},
         json={
             'username': 'teste_nick',
             'password': 'pass_nick',
@@ -79,9 +120,10 @@ def test_update_user(client):
     }
 
 
-def test_update_user_not_exist(client):
+def test_update_user_not_exist(client, user, token):
     response = client.put(
         '/users/4',
+        headers={'Authorization': f'Bearer {token}'},
         json={
             'username': 'teste_nick',
             'password': 'pass_nick',
@@ -89,56 +131,63 @@ def test_update_user_not_exist(client):
         },
     )  # Act (Ação do teste)
 
-    assert response.status_code == HTTPStatus.NOT_FOUND  # Assert (Afirmação)
+    assert response.status_code == HTTPStatus.BAD_REQUEST  # Assert (Afirmação)
     assert response.json() == {
         'detail': {
-            'message': 'Não foi encontrado nenhum usuário com esse id!',
+            'message': 'Não existe nenhum usuário cadastrado com esse ID!',
             'id': 4,
         }
     }
 
 
-def test_read_user(client):
-    response = client.get('/users/1')  # Act (Ação do teste)
+def test_read_user(client, user, token):
+    response = client.get(
+        f'/users/{user.id}', headers={'Authorization': f'Bearer {token}'}
+    )  # Act (Ação do teste)
 
     assert response.status_code == HTTPStatus.OK  # Assert (Afirmação)
     assert response.json() == {
-        'username': 'teste_nick',
-        'email': 'email_nick@teste.com',
+        'username': 'Teste',
+        'email': 'teste@test.com',
         'id': 1,
     }
 
 
-def test_read_user_not_exist(client):
-    response = client.get('/users/4')  # Act (Ação do teste)
+def test_read_user_not_exist(client, user, token):
+    response = client.get(
+        '/users/4', headers={'Authorization': f'Bearer {token}'}
+    )  # Act (Ação do teste)
 
-    assert response.status_code == HTTPStatus.NOT_FOUND  # Assert (Afirmação)
+    assert response.status_code == HTTPStatus.BAD_REQUEST  # Assert (Afirmação)
     assert response.json() == {
         'detail': {
-            'message': 'Não foi encontrado nenhum usuário com esse id!',
+            'message': 'Não existe nenhum usuário cadastrado com esse ID!',
             'id': 4,
         }
     }
 
 
-def test_delete_user(client):
-    response = client.delete('/users/1')  # Act (Ação do teste)
+def test_delete_user(client, user, token):
+    response = client.delete(
+        f'/users/{user.id}', headers={'Authorization': f'Bearer {token}'}
+    )  # Act (Ação do teste)
 
     assert response.status_code == HTTPStatus.OK  # Assert (Afirmação)
     assert response.json() == {
-        'username': 'teste_nick',
-        'email': 'email_nick@teste.com',
+        'message': 'Usuário deletado com sucesso!',
         'id': 1,
     }
 
 
-def test_delete_user_not_exist(client):
-    response = client.delete('/users/4')  # Act (Ação do teste)
+def test_delete_user_not_exist(client, user, token):
+    response = client.delete(
+        '/users/4', headers={'Authorization': f'Bearer {token}'}
+    )  # Act (Ação do teste)
 
-    assert response.status_code == HTTPStatus.NOT_FOUND  # Assert (Afirmação)
+    assert response.status_code == HTTPStatus.BAD_REQUEST  # Assert (Afirmação)
     assert response.json() == {
         'detail': {
-            'message': 'Não foi encontrado nenhum usuário com esse id!',
+            'message': 'Não existe nenhum usuário cadastrado com esse ID!',
             'id': 4,
         }
     }

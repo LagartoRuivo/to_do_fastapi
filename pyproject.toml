@@ -12,6 +12,9 @@ ignr = "^2.2"
 sqlalchemy = "^2.0.35"
 pydantic-settings = "^2.5.2"
 alembic = "^1.13.3"
+pwdlib = {extras = ["argon2"], version = "^0.2.1"}
+python-multipart = "^0.0.12"
+pyjwt = "^2.9.0"
 
 
 [tool.poetry.group.dev.dependencies]
@@ -37,7 +40,7 @@ preview = true
 quote-style = 'single'
 
 [tool.taskipy.tasks]
-run = 'fastapi dev to_do_list/app.py'
+run = 'fastapi dev to_do_list/app.py --port 8003'
 pre_test = 'task lint'
 test = 'pytest --cov=to_do_list -vv'
 post_test = 'coverage html'
