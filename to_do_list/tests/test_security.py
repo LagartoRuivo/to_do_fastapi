@@ -2,14 +2,16 @@ from http import HTTPStatus
 
 from jwt import decode
 
-from to_do_list.security import ALGORITHM, SECRET_KEY, create_access_token
+from to_do_list.security import create_access_token, settings
 
 
 def test_jwt():
     data = {'sub': 'nickolas'}
     token = create_access_token(data)
 
-    decoded = decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+    decoded = decode(
+        token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM]
+    )
 
     assert decoded['sub'] == data['sub']
     assert decoded['exp']
@@ -28,7 +30,7 @@ def test_jwt_with_invalid_token(client):
 
 def test_get_token(client, user):
     response = client.post(
-        '/token',
+        'auth/token',
         data={'username': user.username, 'password': user.clean_password},
     )
 
@@ -40,7 +42,7 @@ def test_get_token(client, user):
 
 def test_get_token_with_wrong_user_or_password(client, user):
     response = client.post(
-        '/token',
+        'auth/token',
         data={'username': user.username, 'password': '2151241'},
     )
 
